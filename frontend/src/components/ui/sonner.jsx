@@ -1,10 +1,10 @@
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, toast } from "sonner"
 
 const Toaster = ({
   ...props
 }) => {
-  const { theme = "system" } = useTheme()
+  // Using light theme by default for React app (no Next.js themes)
+  const theme = "light"
 
   return (
     <Sonner
