@@ -45,6 +45,10 @@ export const ReservationSection = () => {
           guests: '',
           message: ''
         });
+      } else {
+        toast.error('Bir hata oluştu', {
+          description: result.message || 'Lütfen daha sonra tekrar deneyin.'
+        });
       }
     } catch (error) {
       toast.error('Bir hata oluştu', {

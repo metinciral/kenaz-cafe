@@ -1,5 +1,9 @@
-// Mock data for Kenaz Cafe website
+import axios from 'axios';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// Cafe info - static content
 export const cafeInfo = {
   name: "Kenaz Cafe",
   tagline: "Aydınlanmanın ve Yaratıcılığın Buluşma Noktası",
@@ -57,12 +61,38 @@ export const cafeInfo = {
   }
 };
 
-// Mock function for reservation submission
+// API function for reservation submission
 export const submitReservation = async (formData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Mock reservation submitted:", formData);
-      resolve({ success: true, message: "Rezervasyonunuz alındı!" });
-    }, 1000);
-  });
+  try {
+    const response = await axios.post(`${API}/reservations`, formData);
+    return { success: true, data: response.data, message: "Rezervasyonunuz alındı!" };
+  } catch (error) {
+    console.error("Reservation submission error:", error);
+    
+    // Handle validation errors
+    if (error.response?.status === 400) {
+      return { 
+        success: false, 
+        message: error.response.data.detail || "Lütfen bilgilerinizi kontrol edin" 
+      };
+    }
+    
+    // Handle server errors
+    return { 
+      success: false, 
+      message: "Bir hata oluştu. Lütfen daha sonra tekrar deneyin." 
+    };
+  }
+};
+
+// API function to get all reservations (admin use)
+export const getReservations = async (status = null) => {
+  try {
+    const url = status ? `${API}/reservations?status=${status}` : `${API}/reservations`;
+    const response = await axios.get(url);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error fetching reservations:", error);
+    return { success: false, message: "Rezervasyonlar yüklenemedi" };
+  }
 };
