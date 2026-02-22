@@ -1,14 +1,14 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
 from typing import List
-import uuid
-from datetime import datetime, timezone
+from datetime import datetime
+
+from models.reservation import Reservation, ReservationCreate
 
 
 ROOT_DIR = Path(__file__).parent
@@ -20,51 +20,110 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI()
+app = FastAPI(title="Kenaz Cafe API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
+# Health check endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Kenaz Cafe API is running", "status": "healthy"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+# Reservation endpoints
+@api_router.post("/reservations", response_model=Reservation, status_code=201)
+async def create_reservation(reservation_data: ReservationCreate):
+    """
+    Create a new reservation
+    """
+    try:
+        # Create reservation object
+        reservation = Reservation(**reservation_data.dict())
+        
+        # Prepare document for MongoDB
+        doc = reservation.dict()
+        doc['created_at'] = doc['created_at'].isoformat()
+        
+        # Insert into MongoDB
+        result = await db.reservations.insert_one(doc)
+        
+        if not result.inserted_id:
+            raise HTTPException(status_code=500, detail="Rezervasyon kaydedilemedi")
+        
+        logging.info(f"New reservation created: {reservation.id} for {reservation.name}")
+        return reservation
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logging.error(f"Error creating reservation: {str(e)}")
+        raise HTTPException(status_code=500, detail="Bir hata oluştu")
+
+
+@api_router.get("/reservations", response_model=List[Reservation])
+async def get_reservations(
+    status: str = None,
+    limit: int = 100
+):
+    """
+    Get all reservations (for admin use)
+    Optional filter by status: pending, confirmed, cancelled
+    """
+    try:
+        query = {}
+        if status:
+            query["status"] = status
+        
+        reservations = await db.reservations.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+        
+        # Convert ISO string timestamps back to datetime objects
+        for res in reservations:
+            if isinstance(res.get('created_at'), str):
+                res['created_at'] = datetime.fromisoformat(res['created_at'])
+        
+        return reservations
     
-    return status_checks
+    except Exception as e:
+        logging.error(f"Error fetching reservations: {str(e)}")
+        raise HTTPException(status_code=500, detail="Rezervasyonlar yüklenemedi")
+
+
+@api_router.get("/reservations/{reservation_id}", response_model=Reservation)
+async def get_reservation(reservation_id: str):
+    """
+    Get a specific reservation by ID
+    """
+    reservation = await db.reservations.find_one({"id": reservation_id}, {"_id": 0})
+    
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Rezervasyon bulunamadı")
+    
+    # Convert ISO string timestamp back to datetime object
+    if isinstance(reservation.get('created_at'), str):
+        reservation['created_at'] = datetime.fromisoformat(reservation['created_at'])
+    
+    return Reservation(**reservation)
+
+
+@api_router.patch("/reservations/{reservation_id}/status")
+async def update_reservation_status(reservation_id: str, status: str):
+    """
+    Update reservation status (confirmed, cancelled)
+    """
+    if status not in ["pending", "confirmed", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Geçersiz durum")
+    
+    result = await db.reservations.update_one(
+        {"id": reservation_id},
+        {"$set": {"status": status}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Rezervasyon bulunamadı")
+    
+    return {"message": "Durum güncellendi", "status": status}
 
 # Include the router in the main app
 app.include_router(api_router)
