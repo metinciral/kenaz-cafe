@@ -145,7 +145,7 @@ class KenazCafeAPITester:
             "Create Reservation - Invalid Phone",
             "POST",
             "reservations",
-            400,
+            422,
             data=reservation_data
         )
 
