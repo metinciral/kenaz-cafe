@@ -44,11 +44,11 @@ export const cafeInfo = {
   
   contact: {
     address: "Nilüfer, Bursa",
-    phone: "+90 XXX XXX XX XX",
+    phone: "0 530 248 8032",
     email: "info@kenazcafe.com.tr",
     instagram: "https://www.instagram.com/kenazcafe",
     googleMaps: "https://www.google.com/maps/place/Kenaz+Cafe+-+Nil%C3%BCfer/@40.2240551,28.9660435,17z/data=!3m1!4b1!4m6!3m5!1s0x14ca17df2bcbfea1:0x7dd221015740121f!8m2!3d40.224051!4d28.9686184!16s%2Fg%2F11w39q4_c5?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D",
-    menuUrl: "#menu" // Placeholder for menu link
+    menuUrl: "https://qr-menu.simprasuite.com/kafe-kenaz/2/menu/1d29e42a-c0fc-47fc-8d48-83aae2cfafd3"
   },
   
   hours: {
