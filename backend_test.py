@@ -124,7 +124,7 @@ class KenazCafeAPITester:
             "Create Reservation - Invalid Email",
             "POST",
             "reservations",
-            400,
+            422,
             data=reservation_data
         )
 
