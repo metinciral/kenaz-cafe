@@ -42,14 +42,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy frontend/build --project-name=kenazcafe --branch=main
-GitHub'da:
-
-Dosya adı: .github/workflows/cloudflare-pages.yml
-Yukarıdaki içeriği yapıştır
-Commit
-Feb 23, 07:58 PM
-
-Rollback
 Rollback
 
 Copy
