@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,7 +9,7 @@ from typing import List
 from datetime import datetime
 
 from models.reservation import Reservation, ReservationCreate
-
+from email_service import send_email_notification
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -37,7 +37,7 @@ async def root():
 
 # Reservation endpoints
 @api_router.post("/reservations", response_model=Reservation, status_code=201)
-async def create_reservation(reservation_data: ReservationCreate):
+async def create_reservation(reservation_data: ReservationCreate, background_tasks: BackgroundTasks):
     """
     Create a new reservation
     """
@@ -54,6 +54,9 @@ async def create_reservation(reservation_data: ReservationCreate):
         
         if not result.inserted_id:
             raise HTTPException(status_code=500, detail="Rezervasyon kaydedilemedi")
+        
+        # Trigger background email notification
+        background_tasks.add_task(send_email_notification, reservation)
         
         logging.info(f"New reservation created: {reservation.id} for {reservation.name}")
         return reservation

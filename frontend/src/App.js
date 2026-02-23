@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { AboutSection } from './components/AboutSection';
@@ -8,11 +9,12 @@ import { ReservationSection } from './components/ReservationSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { Toaster } from './components/ui/sonner';
+import { AdminPanel } from './components/AdminPanel';
 import './App.css';
 
-function App() {
+function HomePage() {
   return (
-    <div className="App">
+    <>
       <Header />
       <main>
         <HeroSection />
@@ -23,8 +25,21 @@ function App() {
         <ContactSection />
       </main>
       <Footer />
-      <Toaster position="top-right" />
-    </div>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
+        <Toaster position="top-right" />
+      </div>
+    </BrowserRouter>
   );
 }
 
