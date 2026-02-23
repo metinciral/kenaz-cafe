@@ -1,6 +1,3 @@
-Aşağıdaki alana (Edit) yapıştırın:
-
-```yaml
 name: Deploy to Cloudflare Pages
 
 on:
