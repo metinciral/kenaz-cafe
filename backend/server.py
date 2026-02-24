@@ -137,10 +137,32 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=["*"],  # Fixed CORS to allow all for testing
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@api_router.get("/test-email")
+async def test_email_config():
+    """
+    Diagnostic endpoint to test SMTP credentials
+    """
+    import smtplib
+    from email_service import get_email_credentials, SMTP_SERVER, SMTP_PORT
+    
+    email, password = get_email_credentials()
+    if not email or not password:
+        return {"status": "error", "message": f"Eksik yetki ayarları. EMAIL: {'Var' if email else 'Yok'}, PASSWORD: {'Var' if password else 'Yok'}"}
+        
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.set_debuglevel(1)
+        server.starttls()
+        server.login(email, password)
+        server.quit()
+        return {"status": "success", "message": f"SMTP bağlantısı {email} için BAŞARILI!"}
+    except Exception as e:
+        return {"status": "error", "message": f"Bağlantı hatası: {str(e)}"}
 
 # Configure logging
 logging.basicConfig(
