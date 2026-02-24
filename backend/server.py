@@ -131,6 +131,8 @@ async def update_reservation_status(reservation_id: str, status: str):
     
     return {"message": "Durum güncellendi", "status": status}
 
+    app.add_middleware(
+    CORSMiddleware,
     allow_credentials=True,
     allow_origins=["*"],  # Fixed CORS to allow all for testing
     allow_methods=["*"],
