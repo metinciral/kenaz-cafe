@@ -131,11 +131,6 @@ async def update_reservation_status(reservation_id: str, status: str):
     
     return {"message": "Durum güncellendi", "status": status}
 
-# Include the router in the main app
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
     allow_credentials=True,
     allow_origins=["*"],  # Fixed CORS to allow all for testing
     allow_methods=["*"],
@@ -205,3 +200,6 @@ async def update_content(key: str, data: dict):
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# Include the router in the main app
+app.include_router(api_router)
