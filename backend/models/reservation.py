@@ -27,8 +27,8 @@ class ReservationCreate(BaseModel):
 
     @validator('phone')
     def phone_must_be_valid(cls, v):
-        # Remove spaces and common separators
-        cleaned = v.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+        # Remove spaces and common separators including '+'
+        cleaned = v.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
         if not cleaned.isdigit() or len(cleaned) < 10:
             raise ValueError('Geçerli bir telefon numarası giriniz')
         return cleaned
