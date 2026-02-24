@@ -170,6 +170,37 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+# Site Content endpoints
+@api_router.get("/content")
+async def get_content():
+    """Get all site content"""
+    content = await db.site_content.find({}, {"_id": 0}).to_list(100)
+    if not content:
+        # Return defaults if empty
+        return []
+    return content
+
+@api_router.get("/content/{key}")
+async def get_content_by_key(key: str):
+    """Get specific content by key"""
+    item = await db.site_content.find_one({"key": key}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="İçerik bulunamadı")
+    return item
+
+@api_router.put("/content/{key}")
+async def update_content(key: str, data: dict):
+    """Update or create content by key"""
+    data["key"] = key
+    data["updated_at"] = datetime.utcnow().isoformat()
+    
+    result = await db.site_content.update_one(
+        {"key": key},
+        {"$set": data},
+        upsert=True
+    )
+    return {"message": "İçerik güncellendi", "key": key}
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
