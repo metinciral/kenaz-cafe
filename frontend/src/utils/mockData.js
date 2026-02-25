@@ -6,7 +6,7 @@ const API = `${BACKEND_URL}/api`;
 // Cafe info - static content
 export const cafeInfo = {
   name: "Kenaz Cafe",
-  tagline: "Aydınlanmanın ve Yaratıcılığın Buluşma Noktası",
+  tagline: "Nilüfer'in En Akışkan İnterneti ve En Taze Lezzetleri",
   description: "Kenaz, İskandinav mitolojisinde aydınlanmanın, bilgiye açılan kapıların ve yaratıcı enerjinin simgesidir. Biz de Kenaz Cafe olarak, bu mistik enerjiyi her fincana taşıyor ve konforlu bir ortamda kahve keyfi yaşatıyoruz.",
   
   features: [
