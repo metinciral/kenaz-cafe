@@ -1,9 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Instagram, Clock } from 'lucide-react';
 import { cafeInfo } from '../utils/mockData';
 import { Button } from './ui/button';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+
 export const ContactSection = () => {
+  const [contact, setContact] = useState({
+    address: cafeInfo.contact.address,
+    phone: cafeInfo.contact.phone,
+    email: cafeInfo.contact.email,
+  });
+  const [hours, setHours] = useState({
+    weekdays: cafeInfo.hours.weekdays,
+    weekend: cafeInfo.hours.weekend,
+  });
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/content/contact`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setContact(prev => ({ ...prev, ...data })); })
+      .catch(() => {});
+
+    fetch(`${BACKEND_URL}/api/content/hours`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setHours(prev => ({ ...prev, ...data })); })
+      .catch(() => {});
+  }, []);
+
   return (
     <section id="contact" className="py-24 px-6 bg-white">
       <div className="max-w-6xl mx-auto">
@@ -25,9 +49,9 @@ export const ContactSection = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium mb-1 text-gray-900">Adres</h3>
-                <p className="text-gray-600">{cafeInfo.contact.address}</p>
-                <Button 
-                  variant="link" 
+                <p className="text-gray-600">{contact.address}</p>
+                <Button
+                  variant="link"
                   className="text-[#007367] hover:text-[#005a52] p-0 h-auto mt-2"
                   onClick={() => window.open(cafeInfo.contact.googleMaps, '_blank')}
                 >
@@ -42,7 +66,7 @@ export const ContactSection = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium mb-1 text-gray-900">Telefon</h3>
-                <p className="text-gray-600">{cafeInfo.contact.phone}</p>
+                <p className="text-gray-600">{contact.phone}</p>
               </div>
             </div>
 
@@ -52,7 +76,7 @@ export const ContactSection = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium mb-1 text-gray-900">E-posta</h3>
-                <p className="text-gray-600">{cafeInfo.contact.email}</p>
+                <p className="text-gray-600">{contact.email}</p>
               </div>
             </div>
 
@@ -62,8 +86,8 @@ export const ContactSection = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium mb-1 text-gray-900">Instagram</h3>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="text-[#007367] hover:text-[#005a52] p-0 h-auto"
                   onClick={() => window.open(cafeInfo.contact.instagram, '_blank')}
                 >
@@ -78,8 +102,9 @@ export const ContactSection = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium mb-1 text-gray-900">Çalışma Saatleri</h3>
-                <p className="text-gray-600">Hafta İçi: {cafeInfo.hours.weekdays}</p>
-                <p className="text-gray-600">Hafta Sonu: {cafeInfo.hours.weekend}</p>
+                <p className="text-gray-600">Hafta İçi: {hours.weekdays}</p>
+                <p className="text-gray-600">Hafta Sonu: {hours.weekend}</p>
+                {hours.note && <p className="text-gray-500 text-sm mt-1">{hours.note}</p>}
               </div>
             </div>
           </div>
