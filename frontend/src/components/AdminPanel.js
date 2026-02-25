@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { LogOut, Calendar, CheckCircle2, XCircle, Clock, FileText, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminPanel = () => {
@@ -8,18 +8,24 @@ export const AdminPanel = () => {
   const [password, setPassword] = useState('');
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('reservations');
+  const [content, setContent] = useState({
+    about: { title: '', text: '' },
+    contact: { address: '', phone: '', email: '' },
+    hours: { weekdays: '', weekend: '', note: '' },
+  });
+  const [contentLoading, setContentLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Simple hardcoded admin password for MVP, ideally this should be a backend check
   const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'admin123';
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
   useEffect(() => {
-    // Check if previously authenticated in this session
     const authStatus = sessionStorage.getItem('adminAuth');
     if (authStatus === 'true') {
       setIsAuthenticated(true);
       fetchReservations();
+      fetchContent();
     }
   }, []);
 
@@ -30,6 +36,7 @@ export const AdminPanel = () => {
       sessionStorage.setItem('adminAuth', 'true');
       toast.success('Giriş başarılı');
       fetchReservations();
+      fetchContent();
     } else {
       toast.error('Hatalı şifre');
     }
@@ -48,14 +55,46 @@ export const AdminPanel = () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/reservations`);
       if (!response.ok) throw new Error('Veriler alınamadı');
-      
       const data = await response.json();
       setReservations(data);
     } catch (error) {
       toast.error('Rezervasyonlar yüklenirken hata oluştu');
-      console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/content`);
+      if (!response.ok) return;
+      const data = await response.json();
+      const merged = { ...content };
+      data.forEach(item => {
+        if (merged[item.key]) {
+          merged[item.key] = { ...merged[item.key], ...item };
+        }
+      });
+      setContent(merged);
+    } catch (error) {
+      console.error('İçerik yüklenemedi', error);
+    }
+  };
+
+  const saveContent = async (key) => {
+    setContentLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/content/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(content[key]),
+      });
+      if (!response.ok) throw new Error();
+      toast.success('İçerik kaydedildi');
+    } catch (error) {
+      toast.error('Kaydetme başarısız');
+    } finally {
+      setContentLoading(false);
     }
   };
 
@@ -64,15 +103,11 @@ export const AdminPanel = () => {
       const response = await fetch(`${BACKEND_URL}/api/reservations/${id}/status?status=${status}`, {
         method: 'PATCH',
       });
-      
-      if (!response.ok) throw new Error('Durum güncellenemedi');
-      
+      if (!response.ok) throw new Error();
       toast.success(`Rezervasyon ${status === 'confirmed' ? 'onaylandı' : 'iptal edildi'}`);
-      // Refresh the list
       fetchReservations();
     } catch (error) {
       toast.error('İşlem başarısız');
-      console.error(error);
     }
   };
 
@@ -121,9 +156,7 @@ export const AdminPanel = () => {
       <nav className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <span className="text-xl font-bold text-amber-500">Kenaz Cafe Admin</span>
-            </div>
+            <span className="text-xl font-bold text-amber-500">Kenaz Cafe Admin</span>
             <div className="flex items-center gap-4">
               <button
                 onClick={fetchReservations}
@@ -144,101 +177,259 @@ export const AdminPanel = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h2 className="text-3xl font-light mb-2">Rezervasyonlar</h2>
-            <p className="text-zinc-400">Tüm talepleri buradan yönetebilirsiniz.</p>
-          </div>
+      {/* Tabs */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="flex gap-2 border-b border-zinc-800 mb-8">
+          <button
+            onClick={() => setActiveTab('reservations')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'reservations'
+                ? 'border-amber-500 text-amber-500'
+                : 'border-transparent text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Calendar size={16} /> Rezervasyonlar
+          </button>
+          <button
+            onClick={() => setActiveTab('content')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'content'
+                ? 'border-amber-500 text-amber-500'
+                : 'border-transparent text-zinc-400 hover:text-white'
+            }`}
+          >
+            <FileText size={16} /> İçerik Yönetimi
+          </button>
         </div>
+      </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-zinc-950 border-b border-zinc-800 text-zinc-400 text-sm uppercasse">
-                  <th className="px-6 py-4 font-medium">Tarih / Saat</th>
-                  <th className="px-6 py-4 font-medium">Müşteri</th>
-                  <th className="px-6 py-4 font-medium">Kişi</th>
-                  <th className="px-6 py-4 font-medium">Durum</th>
-                  <th className="px-6 py-4 font-medium text-right">İşlemler</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800 text-sm">
-                {reservations.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-zinc-500">
-                      {loading ? 'Yükleniyor...' : 'Henüz rezervasyon bulunmuyor.'}
-                    </td>
-                  </tr>
-                ) : (
-                  reservations.map((res) => (
-                    <tr key={res.id} className="hover:bg-zinc-800/50 transition-colors group">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-zinc-200">{res.date}</span>
-                          <span className="inline-flex items-center gap-1 text-xs text-zinc-400 mt-1">
-                            <Clock size={12} /> {res.time}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-white">{res.name}</span>
-                          <span className="text-xs text-zinc-400 mt-1">{res.phone}</span>
-                          <span className="text-xs text-zinc-500">{res.email}</span>
-                          {res.message && (
-                            <span className="text-xs text-amber-500 mt-2 bg-amber-500/10 p-1 rounded italic max-w-xs truncate" title={res.message}>
-                              "{res.message}"
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-800 text-amber-500 font-semibold">
-                          {res.guests}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                          res.status === 'confirmed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                          res.status === 'cancelled' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                          'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                        }`}>
-                          {res.status === 'confirmed' && <CheckCircle2 size={12} />}
-                          {res.status === 'cancelled' && <XCircle size={12} />}
-                          {res.status === 'pending' && <Clock size={12} />}
-                          {res.status === 'confirmed' ? 'Onaylandı' :
-                           res.status === 'cancelled' ? 'İptal Edildi' : 'Bekliyor'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {res.status !== 'confirmed' && (
-                            <button
-                              onClick={() => updateStatus(res.id, 'confirmed')}
-                              className="inline-flex items-center gap-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium border border-green-500/20"
-                            >
-                              <CheckCircle2 size={14} /> Onayla
-                            </button>
-                          )}
-                          {res.status !== 'cancelled' && (
-                            <button
-                              onClick={() => updateStatus(res.id, 'cancelled')}
-                              className="inline-flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium border border-red-500/20"
-                            >
-                              <XCircle size={14} /> İptal
-                            </button>
-                          )}
-                        </div>
-                      </td>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Reservations Tab */}
+        {activeTab === 'reservations' && (
+          <>
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h2 className="text-3xl font-light mb-2">Rezervasyonlar</h2>
+                <p className="text-zinc-400">Tüm talepleri buradan yönetebilirsiniz.</p>
+              </div>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-950 border-b border-zinc-800 text-zinc-400 text-sm">
+                      <th className="px-6 py-4 font-medium">Tarih / Saat</th>
+                      <th className="px-6 py-4 font-medium">Müşteri</th>
+                      <th className="px-6 py-4 font-medium">Kişi</th>
+                      <th className="px-6 py-4 font-medium">Durum</th>
+                      <th className="px-6 py-4 font-medium text-right">İşlemler</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800 text-sm">
+                    {reservations.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-12 text-center text-zinc-500">
+                          {loading ? 'Yükleniyor...' : 'Henüz rezervasyon bulunmuyor.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      reservations.map((res) => (
+                        <tr key={res.id} className="hover:bg-zinc-800/50 transition-colors group">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-zinc-200">{res.date}</span>
+                              <span className="inline-flex items-center gap-1 text-xs text-zinc-400 mt-1">
+                                <Clock size={12} /> {res.time}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-white">{res.name}</span>
+                              <span className="text-xs text-zinc-400 mt-1">{res.phone}</span>
+                              <span className="text-xs text-zinc-500">{res.email}</span>
+                              {res.message && (
+                                <span className="text-xs text-amber-500 mt-2 bg-amber-500/10 p-1 rounded italic max-w-xs truncate" title={res.message}>
+                                  "{res.message}"
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-800 text-amber-500 font-semibold">
+                              {res.guests}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                              res.status === 'confirmed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                              res.status === 'cancelled' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                              'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            }`}>
+                              {res.status === 'confirmed' && <CheckCircle2 size={12} />}
+                              {res.status === 'cancelled' && <XCircle size={12} />}
+                              {res.status === 'pending' && <Clock size={12} />}
+                              {res.status === 'confirmed' ? 'Onaylandı' :
+                               res.status === 'cancelled' ? 'İptal Edildi' : 'Bekliyor'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {res.status !== 'confirmed' && (
+                                <button
+                                  onClick={() => updateStatus(res.id, 'confirmed')}
+                                  className="inline-flex items-center gap-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium border border-green-500/20"
+                                >
+                                  <CheckCircle2 size={14} /> Onayla
+                                </button>
+                              )}
+                              {res.status !== 'cancelled' && (
+                                <button
+                                  onClick={() => updateStatus(res.id, 'cancelled')}
+                                  className="inline-flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium border border-red-500/20"
+                                >
+                                  <XCircle size={14} /> İptal
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Content Tab */}
+        {activeTab === 'content' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-light mb-2">İçerik Yönetimi</h2>
+              <p className="text-zinc-400">Site metinlerini buradan güncelleyebilirsiniz.</p>
+            </div>
+
+            {/* Hakkımızda */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-amber-500 mb-4">Hakkımızda</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Başlık</label>
+                  <input
+                    type="text"
+                    value={content.about.title}
+                    onChange={(e) => setContent({ ...content, about: { ...content.about, title: e.target.value } })}
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Açıklama</label>
+                  <textarea
+                    rows={4}
+                    value={content.about.text}
+                    onChange={(e) => setContent({ ...content, about: { ...content.about, text: e.target.value } })}
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500 resize-none"
+                  />
+                </div>
+                <button
+                  onClick={() => saveContent('about')}
+                  disabled={contentLoading}
+                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  <Save size={14} /> Kaydet
+                </button>
+              </div>
+            </div>
+
+            {/* İletişim */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-amber-500 mb-4">İletişim</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Adres</label>
+                  <input
+                    type="text"
+                    value={content.contact.address}
+                    onChange={(e) => setContent({ ...content, contact: { ...content.contact, address: e.target.value } })}
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Telefon</label>
+                  <input
+                    type="text"
+                    value={content.contact.phone}
+                    onChange={(e) => setContent({ ...content, contact: { ...content.contact, phone: e.target.value } })}
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">E-posta</label>
+                  <input
+                    type="text"
+                    value={content.contact.email}
+                    onChange={(e) => setContent({ ...content, contact: { ...content.contact, email: e.target.value } })}
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <button
+                  onClick={() => saveContent('contact')}
+                  disabled={contentLoading}
+                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  <Save size={14} /> Kaydet
+                </button>
+              </div>
+            </div>
+
+            {/* Çalışma Saatleri */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-amber-500 mb-4">Çalışma Saatleri</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Hafta içi</label>
+                  <input
+                    type="text"
+                    value={content.hours.weekdays}
+                    onChange={(e) => setContent({ ...content, hours: { ...content.hours, weekdays: e.target.value } })}
+                    placeholder="Örn: 08:00 - 22:00"
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Hafta sonu</label>
+                  <input
+                    type="text"
+                    value={content.hours.weekend}
+                    onChange={(e) => setContent({ ...content, hours: { ...content.hours, weekend: e.target.value } })}
+                    placeholder="Örn: 09:00 - 23:00"
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Not</label>
+                  <input
+                    type="text"
+                    value={content.hours.note}
+                    onChange={(e) => setContent({ ...content, hours: { ...content.hours, note: e.target.value } })}
+                    placeholder="Örn: Pazar günleri kapalı"
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <button
+                  onClick={() => saveContent('hours')}
+                  disabled={contentLoading}
+                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  <Save size={14} /> Kaydet
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
