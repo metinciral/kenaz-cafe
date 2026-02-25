@@ -69,6 +69,7 @@ async def create_reservation(reservation_data: ReservationCreate, background_tas
 
 
 @api_router.get("/reservations", response_model=List[Reservation])
+
 async def get_reservations(
     status: str = None,
     limit: int = 100
