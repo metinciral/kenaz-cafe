@@ -11,7 +11,7 @@ export const Footer = () => {
           <div>
             <h3 className="text-2xl font-light mb-4">Kenaz Cafe</h3>
             <p className="text-gray-400 leading-relaxed">
-              Aydınlanmanın ve yaratıcılığın buluşma noktası. Home office çalışanları için tasarlanmış huzurlu mekan.
+              Nilüfer'in En Akışkan İnterneti ve En Taze Lezzetleri. Home office çalışanları için tasarlanmış huzurlu mekan.
             </p>
           </div>
 
