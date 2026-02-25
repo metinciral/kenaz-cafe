@@ -32,7 +32,7 @@ export const HeroSection = () => {
         </h1>
         
         <p className="text-xl md:text-2xl mb-4 font-light text-white/95 max-w-2xl mx-auto leading-relaxed">
-          Aydınlanmanın ve Yaratıcılığın Buluşma Noktası
+          Nilüfer'in En Akışkan İnterneti ve En Taze Lezzetleri
         </p>
         
         <p className="text-base md:text-lg mb-12 text-white/85 max-w-xl mx-auto leading-relaxed">
