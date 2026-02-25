@@ -185,8 +185,11 @@ async def get_content_by_key(key: str):
         raise HTTPException(status_code=404, detail="İçerik bulunamadı")
     return item
 
+from fastapi import Request
+
 @api_router.put("/content/{key}")
-async def update_content(key: str, data: dict):
+async def update_content(key: str, request: Request):
+    data = await request.json()
     """Update or create content by key"""
     data["key"] = key
     data["updated_at"] = datetime.utcnow().isoformat()
