@@ -9,8 +9,11 @@ Modern, minimalist web sitesi - Home office çalışanları için tasarlanmış 
 - **Database:** MongoDB
 - **Deployment:** 
   - Frontend: Cloudflare Pages
-  - Backend: Railway
+  - Backend: Render
   - Database: MongoDB Atlas
+
+Not:
+- Backend deploy'u ilk etapta Railway ile denendi; şu an aktif deploy Render üzerinden devam ediyor.
 
 ## 📁 Proje Yapısı
 
@@ -34,7 +37,7 @@ Modern, minimalist web sitesi - Home office çalışanları için tasarlanmış 
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=your_railway_backend_url
+REACT_APP_BACKEND_URL=your_backend_url
 ```
 
 ### Backend (.env)
@@ -63,6 +66,9 @@ yarn start
 ## 🌐 Deployment
 
 Detaylı deployment talimatları için [DEPLOYMENT.md](./DEPLOYMENT.md) dosyasına bakın.
+
+Render notu:
+- Render servisinde `Root Directory=backend` kullanıldığı için sadece `backend/` altındaki değişiklikler backend auto-deploy'u tetikler.
 
 ## 🔄 Making Changes
 
@@ -105,4 +111,4 @@ Detaylı deployment talimatları için [DEPLOYMENT.md](./DEPLOYMENT.md) dosyası
 
 ## 📄 License
 
-Proprietary - Kenaz Cafe © 2026
+Proprietary - Kenaz Cafe 2026

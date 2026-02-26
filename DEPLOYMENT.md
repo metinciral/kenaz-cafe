@@ -15,7 +15,7 @@ Bu dokümanda deployment işlemini adım adım bulabilirsiniz.
 
 5. **Network Access** bölümünden IP ekleyin:
    - **"Add IP Address"** → **"Allow Access from Anywhere"** (0.0.0.0/0)
-   - Railway'den erişim için gerekli
+   - Render'dan erişim için gerekli
 
 6. **Connection String** alın:
    - Cluster → **"Connect"** → **"Connect your application"**
@@ -30,28 +30,37 @@ Bu dokümanda deployment işlemini adım adım bulabilirsiniz.
 
 ---
 
-## 2️⃣ Railway - Backend Deployment
+## 2️⃣ Backend Deployment (Render)
+
+Not:
+- Backend deploy'u ilk etapta Railway ile denendi; şu an aktif ortam Render üzerinden devam ediyor.
 
 ### Adımlar:
-1. [Railway.app](https://railway.app) hesabınıza giriş yapın
-2. **"New Project"** → **"Deploy from GitHub repo"**
-3. GitHub repository'sini seçin (metinciral/kenaz-cafe)
-4. **Settings** bölümünden:
-   - **Root Directory:** `/backend` olarak ayarlayın
-   - **Start Command:** `uvicorn server:app --host 0.0.0.0 --port $PORT`
-
-5. **Variables** sekmesinden environment variables ekleyin:
+1. [Render Dashboard](https://dashboard.render.com) hesabınıza giriş yapın
+2. **New +** → **Web Service**
+3. GitHub repository'sini seçin: `metinciral/kenaz-cafe`
+4. **Branch:** `main`
+5. **Root Directory:** `backend`
+6. **Runtime:** Docker (repo içinde `backend/Dockerfile` kullanılır)
+7. **Environment Variables** ekleyin:
    ```
    MONGO_URL=mongodb+srv://kenaz_admin:SIZIN_SIFRE@cluster0.xxxxx.mongodb.net/kenaz_cafe?retryWrites=true&w=majority
    DB_NAME=kenaz_cafe
    CORS_ORIGINS=https://kenazcafe.com.tr,https://www.kenazcafe.com.tr
+
+   # (Opsiyonel) E-posta bildirimleri
+   SMTP_EMAIL=your_gmail_address
+   SMTP_PASSWORD=your_gmail_app_password
+   ADMIN_EMAIL=info@kenazcafe.com.tr
    ```
+8. **Create Web Service** / **Deploy**
+9. Deployment tamamlanınca servis URL'ini kaydedin
+   - Örnek: `https://kenaz-cafe-backend.onrender.com`
 
-6. **Deploy** butonuna tıklayın
-7. Deployment tamamlanınca **Domain** kısmından URL'i kopyalayın
-   - Örnek: `https://kenaz-cafe-backend.up.railway.app`
+Auto-deploy notu:
+- Render servisinde `Root Directory=backend` kullanıldığı için sadece `backend/` altındaki değişiklikler backend auto-deploy'u tetikler.
 
-**✅ Backend Hazır!** Railway URL'ini kaydedin.
+**✅ Backend Hazır!** Render URL'ini kaydedin.
 
 ---
 
@@ -62,15 +71,15 @@ Bu dokümanda deployment işlemini adım adım bulabilirsiniz.
 2. **"Create application"** → **"Pages"** → **"Connect to Git"**
 3. GitHub repository'sini seçin (metinciral/kenaz-cafe)
 4. **Build Settings:**
-   - **Build command:** `cd frontend && yarn install && yarn build`
-   - **Build output directory:** `frontend/build`
-   - **Root directory:** `/` (boş bırakın)
+   - **Root directory:** `frontend`
+   - **Build command:** `CI=false npm run build`
+   - **Build output directory:** `build`
 
 5. **Environment Variables:**
    ```
-   REACT_APP_BACKEND_URL=https://kenaz-cafe-backend.up.railway.app
+   REACT_APP_BACKEND_URL=https://kenaz-cafe-backend.onrender.com
    ```
-   (Railway'den aldığınız URL'i yapıştırın)
+   (Render'dan aldığınız backend URL'ini yapıştırın)
 
 6. **"Save and Deploy"** tıklayın
 7. İlk deployment 3-5 dakika sürebilir
@@ -102,7 +111,7 @@ Bu dokümanda deployment işlemini adım adım bulabilirsiniz.
 
 ### Backend Test:
 ```bash
-curl https://kenaz-cafe-backend.up.railway.app/api/
+curl https://kenaz-cafe-backend.onrender.com/api/
 ```
 **Beklenen:** `{"message": "Kenaz Cafe API is running", "status": "healthy"}`
 
@@ -123,7 +132,7 @@ curl https://kenaz-cafe-backend.up.railway.app/api/
 
 Siteniz artık yayında:
 - 🌐 **Web:** https://www.kenazcafe.com.tr
-- 🔧 **Backend:** Railway
+- 🔧 **Backend:** Render
 - 💾 **Database:** MongoDB Atlas
 - ☁️ **Frontend:** Cloudflare Pages
 
@@ -133,7 +142,7 @@ Siteniz artık yayında:
 
 ### Otomatik Deployment:
 - GitHub'a kod push edildiğinde
-- Railway ve Cloudflare otomatik deploy eder
+- Render ve Cloudflare otomatik deploy eder
 - 2-3 dakika içinde güncellemeler yayına alınır
 
 ### Manuel Güncelleme:
@@ -151,14 +160,14 @@ Siteniz artık yayında:
 ## 🆘 Sorun Giderme
 
 ### Backend çalışmıyor:
-- Railway logs kontrol edin
+- Render logs kontrol edin
 - MongoDB connection string doğru mu?
 - Environment variables ekli mi?
 
 ### Frontend backend'e bağlanamıyor:
 - REACT_APP_BACKEND_URL doğru mu?
 - CORS ayarları doğru mu?
-- Railway backend çalışıyor mu?
+- Render backend çalışıyor mu?
 
 ### Rezervasyonlar kaydedilmiyor:
 - MongoDB Atlas'ta IP whitelist var mı?
@@ -170,6 +179,6 @@ Siteniz artık yayında:
 ## 📞 Destek
 
 Sorun yaşarsanız:
-1. Railway ve Cloudflare logs kontrol edin
+1. Render ve Cloudflare logs kontrol edin
 2. GitHub issues açın
 3. Emergent AI'a danışın
